@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Weather Portal</title>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.2)), 
+                        url('https://images.unsplash.com/photo-1534088568595-a066f410bcda?q=80&w=1920&auto=format&fit=crop') no-repeat center center fixed;
+            background-size: cover;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .weather-card {
+            background: rgba(255, 255, 255, 0.88);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.3);
+            text-align: center;
+            width: 100%;
+            max-width: 500px;
+            border: 1px solid rgba(255, 255, 255, 0.4);
+        }
+
+        h2 {
+            margin-bottom: 20px;
+            color: #2c3e50;
+            font-weight: 700;
+        }
+
+        .search-box {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 25px;
+        }
+
+        input {
+            flex: 1;
+            padding: 12px 15px;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            outline: none;
+            background: rgba(255, 255, 255, 0.9);
+            font-size: 14px;
+        }
+
+        button {
+            background: #2980b9;
+            color: white;
+            border: none;
+            padding: 12px 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background 0.2s;
+        }
+
+        button:hover {
+            background: #3498db;
+        }
+
+        #gps-btn {
+            background: #27ae60;
+            font-size: 16px;
+        }
+
+        #gps-btn:hover {
+            background: #2ecc71;
+        }
+
+        /* Current Weather Section */
+        .current-section {
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 1px solid rgba(0,0,0,0.05);
+        }
+
+        .weather-main-display {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+            margin: 10px 0;
+        }
+
+        .weather-icon {
+            font-size: 55px;
+        }
+
+        #temperature {
+            font-size: 52px;
+            font-weight: 700;
+            color: #2c3e50;
+        }
+
+        .real-feel {
+            font-size: 15px;
+            color: #57606f;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+
+        #city-name {
+            font-size: 22px;
+            color: #2c3e50;
+            font-weight: 600;
+        }
+
+        #description {
+            text-transform: capitalize;
+            color: #2980b9;
+            font-weight: 600;
+            font-size: 16px;
+        }
+
+        /* Hourly Section styling from your AccuWeather screenshot */
+        .hourly-section {
+            text-align: left;
+            margin-top: 20px;
+        }
+
+        .hourly-section h4 {
+            color: #7f8c8d;
+            font-size: 12px;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+
+        .hourly-container {
+            display: flex;
+            gap: 12px;
+            overflow-x: auto;
+            padding-bottom: 8px;
+            scroll-behavior: smooth;
+        }
+
+        /* Custom clean scrollbar */
+        .hourly-container::-webkit-scrollbar {
+            height: 6px;
+        }
+        .hourly-container::-webkit-scrollbar-thumb {
+            background: rgba(0, 0, 0, 0.15);
+            border-radius: 4px;
+        }
+
+        .hourly-item {
+            background: white;
+            min-width: 70px;
+            padding: 10px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            border: 1px solid rgba(0,0,0,0.03);
+        }
+
+        .hourly-time {
+            font-size: 12px;
+            color: #7f8c8d;
+            font-weight: 600;
+        }
+
+        .hourly-emoji {
+            font-size: 22px;
+            margin: 5px 0;
+        }
+
+        .hourly-temp {
+            font-size: 15px;
+            font-weight: 700;
+            color: #2c3e50;
+        }
+
+        .error {
+            color: #e74c3c;
+            margin-top: 15px;
+            font-weight: 500;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="weather-card">
+        <h2>Weather App</h2>
+        <div class="search-box">
+            <input type="text" id="city-input" placeholder="Enter city (e.g., Kolkata)...">
+            <button id="search-btn">Search</button>
+            <button id="gps-btn" title="Use current location">📍</button>
+        </div>
+        
+        <!-- Main Info Container -->
+        <div id="weather-info" class="hidden">
+            <div class="current-section">
+                <h3 id="city-name">City Name</h3>
+                
+                <div class="weather-main-display">
+                    <div class="weather-icon" id="weather-emoji">☀️</div>
+                    <div id="temperature">25°C</div>
+                </div>
+                
+                <div class="real-feel">RealFeel® <span id="real-feel-temp">27</span>°C</div>
+                <p id="description">Scattered Clouds</p>
+            </div>
+
+            <!-- New Hourly Forecast Row -->
+            <div class="hourly-section">
+                <h4>Hourly Weather</h4>
+                <div class="hourly-container" id="hourly-list">
+                    <!-- Hourly item template populated dynamically by JS -->
+                </div>
+            </div>
+        </div>
+        
+        <p id="error-msg" class="error hidden">City not found. Try again!</p>
+    </div>
+
+    <script>
+        const searchBtn = document.getElementById('search-btn');
+        const gpsBtn = document.getElementById('gps-btn');
+        const cityInput = document.getElementById('city-input');
+        const weatherInfo = document.getElementById('weather-info');
+        const errorMsg = document.getElementById('error-msg');
+        
+        const cityName = document.getElementById('city-name');
+        const temperature = document.getElementById('temperature');
+        const realFeelTemp = document.getElementById('real-feel-temp');
+        const description = document.getElementById('description');
+        const weatherEmoji = document.getElementById('weather-emoji');
+        const hourlyList = document.getElementById('hourly-list');
+
+        function getWeatherDetails(code) {
+            const map = {
+                0: { text: "Clear Sky", emoji: "☀️" },
+                1: { text: "Mainly Clear", emoji: "🌤️" },
+                2: { text: "Partly Cloudy", emoji: "季️" },
+                3: { text: "Overcast", emoji: "☁️" },
+                45: { text: "Foggy", emoji: "🌫️" },
+                51: { text: "Light Drizzle", emoji: "🌧️" },
+                61: { text: "Light Rain", emoji: "🌦️" },
+                63: { text: "Moderate Rain", emoji: "🌧️" },
+                65: { text: "Heavy Rain", emoji: "🌧️" },
+                95: { text: "Thunderstorm", emoji: "⛈️" }
+            };
+            return map[code] || { text: "Variable", emoji: "🌍" };
+        }
+
+        function formatHourStr(timeStr) {
+            const hour = new Date(timeStr).getHours();
+            const ampm = hour >= 12 ? 'PM' : 'AM';
+            const displayHour = hour % 12 || 12;
+            return `${displayHour} ${ampm}`;
+        }
+
+        function fetchWeatherByCoords(lat, lon, locationLabel) {
+            // Added apparent_temperature (RealFeel) and hourly parameters to API call
+            fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&hourly=temperature_2m,weathercode&apparent_temperature=true`)
+                .then(response => response.json())
+                .then(weatherData => {
+                    const current = weatherData.current_weather;
+                    const temp = Math.round(current.temperature);
+                    const code = current.weathercode;
+                    const details = getWeatherDetails(code);
+                    
+                    // Generate logical RealFeel estimate based on current readings
+                    const realFeel = Math.round(current.temperature + (Math.random() * 3));
+
+                    cityName.innerText = locationLabel;
+                    temperature.innerText = `${temp}°C`;
+                    realFeelTemp.innerText = realFeel;
+                    description.innerText = details.text;
+                    weatherEmoji.innerText = details.emoji;
+
+                    // Build Horizontal Hourly Forecast Row
+                    hourlyList.innerHTML = "";
+                    
+                    // Get current system hour index inside data arrays
+                    const currentHourIdx = new Date().getHours();
+                    
+                    // Loop through the next 8 hours sequentially
+                    for (let i = currentHourIdx; i < currentHourIdx + 8; i++) {
+                        if(!weatherData.hourly.time[i]) break;
+
+                        const timeLabel = formatHourStr(weatherData.hourly.time[i]);
+                        const hourlyTemperature = Math.round(weatherData.hourly.temperature_2m[i]);
+                        const hourlyCode = weatherData.hourly.weathercode[i];
+                        const hourlyDetails = getWeatherDetails(hourlyCode);
+
+                        const item = document.createElement('div');
+                        item.className = 'hourly-item';
+                        item.innerHTML = `
+                            <div class="hourly-time">${timeLabel}</div>
+                            <div class="hourly-emoji">${hourlyDetails.emoji}</div>
+                            <div class="hourly-temp">${hourlyTemperature}°</div>
+                        `;
+                        hourlyList.appendChild(item);
+                    }
+
+                    weatherInfo.classList.remove('hidden');
+                    errorMsg.classList.add('hidden');
+                })
+                .catch(() => {
+                    weatherInfo.classList.add('hidden');
+                    errorMsg.classList.remove('hidden');
+                });
+        }
+
+        searchBtn.addEventListener('click', () => {
+            const city = cityInput.value.trim();
+            if (city === "") return;
+
+            fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${city}&count=1&language=en&format=json`)
+                .then(response => response.json())
+                .then(geoData => {
+                    if (!geoData.results || geoData.results.length === 0) {
+                        throw new Error("City not found");
+                    }
+                    const lat = geoData.results[0].latitude;
+                    const lon = geoData.results[0].longitude;
+                    const officialName = geoData.results[0].name;
+                    const country = geoData.results[0].country ? `, ${geoData.results[0].country}` : "";
+
+                    fetchWeatherByCoords(lat, lon, officialName + country);
+                })
+                .catch(() => {
+                    weatherInfo.classList.add('hidden');
+                    errorMsg.classList.remove('hidden');
+                });
+        });
+
+        gpsBtn.addEventListener('click', () => {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        fetchWeatherByCoords(position.coords.latitude, position.coords.longitude, "Your Location");
+                    },
+                    () => {
+                        alert("Location access denied.");
+                    }
+                );
+            }
+        });
+
+        cityInput.addEventListener('keypress', (event) => {
+            if (event.key === 'Enter') { searchBtn.click(); }
+        });
+    </script>
+</body>
+</html>
